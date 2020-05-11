@@ -1,0 +1,70 @@
+---
+- name: Configure Docker
+  hosts: sc4syslog
+  become: yes
+  become_user: root
+
+  tasks:
+
+  - name: Enable IPv4 forwarding
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      state: present
+
+  - name: Remove older versions of Docker
+    yum:
+      name: "{{ packages }}"
+      state: absent
+    vars:
+      packages:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+
+  - name: Set up the Docker repository
+    yum_repository:
+      name: docker-ce-stable
+      description: Docker CE Stable - $basearch
+      file: docker-ce
+      baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+      enabled: yes
+      state: present
+
+  - name: Install Docker dependencies
+    yum:
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - audit-libs-python
+        - checkpolicy
+        - container-selinux
+        - libcgroup
+        - libselinux-python
+        - libsemanage-python
+        - policycoreutils-python
+        - python-IPy
+        - setools-libs
+
+  - name: Install Docker packages
+    yum:
+      name: "{{ packages }}"
+      state: present
+      disable_gpg_check: yes
+    vars:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+
+  - name: Start Docker
+    systemd:
+      name: docker
+      state: started
+      daemon_reload: yes
