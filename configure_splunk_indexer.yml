@@ -1,0 +1,24 @@
+---
+- name: Configure Splunk Indexer (HEC input)
+  hosts: idx1
+  become: yes
+  become_user: root
+
+  tasks:
+
+  - name: Copy HEC input app to Splunk indexer idx1
+    synchronize:
+      src: ../Software/splunk_httpinput
+      dest: /opt/splunk/etc/apps/
+
+  - name: Set owner for HEC input app
+    file:
+      path: /opt/splunk/etc/apps/splunk_httpinput
+      owner: splunk
+      group: splunk
+      recurse: yes
+
+  - name: Restart Splunk
+    service:
+      name: splunk
+      state: restarted
