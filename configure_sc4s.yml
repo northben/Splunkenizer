@@ -1,0 +1,57 @@
+---
+- name: Configure Splunk Connect 4 Syslog
+  hosts: sc4syslog
+  become: yes
+  become_user: root
+  vars:
+    splunk_hec_url: https://172.16.1.100:8088
+    splunk_hec_token: 8c201f91-c907-4192-9ba5-a5a60be9f093
+
+  tasks:
+
+  - name: Create local volume for disk buffer
+    become: yes
+    shell:
+      cmd: docker volume create splunk-sc4s-var
+
+  - name: Create mount point for local overrides and configurations
+    become: yes
+    file:
+      path: /opt/sc4s/local
+      state: directory
+
+  - name: Create mount point for local storage of syslog events
+    become: yes
+    file:
+      path: /opt/sc4s/archive
+      state: directory
+
+  - name: Create mount point for custom TLS certificates
+    become: yes
+    file:
+      path: /opt/sc4s/tls
+      state: directory
+
+  - name: Create sc4s configuration file
+    template:
+      src: template/env_file.j2
+      dest: /opt/sc4s/env_file
+    notify: Restart sc4s service
+
+  - name: Create SC4S service systemd file
+    template:
+      src: template/sc4s.service.j2
+      dest: /lib/systemd/system/sc4s.service
+
+  - name: Reload, enable and start sc4s
+    systemd:
+      name: sc4s
+      state: started
+      enabled: yes
+      daemon_reload: yes
+
+  handlers:
+    - name: Restart sc4s service
+      systemd:
+        name: sc4s
+        state: restarted

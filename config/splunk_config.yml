@@ -29,6 +29,6 @@ splunk_hosts:
       - search_head
       - license_master
 
-  - name: idx2
+  - name: sc4syslog
     roles:
       - search_head
